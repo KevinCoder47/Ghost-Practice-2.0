@@ -1,17 +1,15 @@
 {
-  "name": "backend",
+  "name": "mb-autotime-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/server.js",
-  "directories": {
-    "test": "tests"
-  },
+  "description": "MB AutoTime backend API",
+  "main": "dist/server.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "keywords": [],
   "author": "",
@@ -20,17 +18,22 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "openai": "^4.104.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.12",
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
     "eslint": "^10.2.1",
-    "nodemon": "^3.1.14",
-    "ts-node-dev": "^2.0.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }

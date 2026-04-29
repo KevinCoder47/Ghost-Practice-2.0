@@ -2,12 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './config/db.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+import mattersRouter from './routes/matters.js';
+import timeEntriesRouter from './routes/timeEntries.js';
+import activitiesRouter from './routes/activities.js';
+import reportsRouter from './routes/reports.js';
 
 dotenv.config();
 
 const app = express();
 
-// ── CORS ──────────────────────────────────────────────────────────────────────
+// ── CORS ───────────────────────────────────────────────────────────────────────
 const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim());
@@ -15,7 +21,6 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow server-to-server / curl requests (no origin header)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin '${origin}' not allowed`));
@@ -24,22 +29,35 @@ app.use(
   })
 );
 
-// ── Body parsing ──────────────────────────────────────────────────────────────
+// ── Body parsing ───────────────────────────────────────────────────────────────
 app.use(express.json());
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// ── Health / debug ─────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
-  res.send('API is running...');
+  res.json({ status: 'ok', service: 'mb-autotime-api' });
 });
 
-app.get('/test-db', async (_req, res) => {
+app.get('/health', async (_req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
-    res.json({ message: 'Database connected', time: result.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'DB connection failed' });
+    res.json({ status: 'ok', db: 'connected', time: result.rows[0].now });
+  } catch {
+    res.status(500).json({ status: 'error', db: 'unreachable' });
   }
 });
+
+// ── API routes ─────────────────────────────────────────────────────────────────
+app.use('/matters', mattersRouter);
+app.use('/time-entries', timeEntriesRouter);
+app.use('/activities', activitiesRouter);
+app.use('/reports', reportsRouter);
+
+// ── 404 ────────────────────────────────────────────────────────────────────────
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// ── Global error handler (must be last) ───────────────────────────────────────
+app.use(errorHandler);
 
 export default app;
