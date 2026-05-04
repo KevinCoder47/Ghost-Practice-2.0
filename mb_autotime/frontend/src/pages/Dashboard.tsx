@@ -4,6 +4,13 @@ import { getTimeEntries } from '../services/api';
 import type { TimeEntry } from '../types';
 import './Dashboard.css';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+// FIX: Centralise attorney — swap to auth context when multi-user auth is added
+const ATTORNEY_ID = 1;
+const DAILY_TARGET = 8;
+const WEEKLY_TARGET = 40;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function todayISO() {
@@ -36,9 +43,6 @@ function greeting() {
   if (h < 17) return 'afternoon';
   return 'evening';
 }
-
-const DAILY_TARGET = 8;
-const WEEKLY_TARGET = 40;
 
 // Maps activity type → icon class + emoji
 const ACTIVITY_ICON_MAP: Record<string, { cls: string; emoji: string }> = {
@@ -154,25 +158,30 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getTimeEntries()
+    // FIX: Filter by attorney_id so metrics only reflect the logged-in attorney,
+    // not every attorney in the database.
+    getTimeEntries({ attorney_id: ATTORNEY_ID })
       .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  // Derived metrics
-  const todayConfirmed = entries.filter(e => e.status === 'confirmed' && isToday(e.created_at));
+  // ── Derived metrics ──────────────────────────────────────────────────────────
+
+  const todayConfirmed = entries.filter(
+    e => e.status === 'confirmed' && isToday(e.created_at)
+  );
   const todayUnits = todayConfirmed.reduce((sum, e) => sum + (e.duration_units ?? 0), 0);
   const todayHours = todayUnits * 0.1;
-  const todayPct = Math.min(100, (todayHours / DAILY_TARGET) * 100);
+  const todayPct   = Math.min(100, (todayHours / DAILY_TARGET) * 100);
 
   const weekUnits = entries
     .filter(e => e.status === 'confirmed' && isThisWeek(e.created_at))
     .reduce((sum, e) => sum + (e.duration_units ?? 0), 0);
   const weekHours = weekUnits * 0.1;
-  const weekPct = Math.min(100, (weekHours / WEEKLY_TARGET) * 100);
+  const weekPct   = Math.min(100, (weekHours / WEEKLY_TARGET) * 100);
 
-  const pendingCount = entries.filter(e => e.status === 'pending').length;
+  const pendingCount       = entries.filter(e => e.status === 'pending').length;
   const confirmedTodayCount = todayConfirmed.length;
 
   const recent = [...entries]
@@ -206,7 +215,7 @@ export default function Dashboard() {
           <>
             {/* ── Hero grid ── */}
             <div className="db-hero-grid">
-              {/* Today billable hours – dark accent card */}
+              {/* Today billable hours */}
               <div className="db-hero-card db-hero-card--accent">
                 <div className="db-hero-card__top">
                   <div>

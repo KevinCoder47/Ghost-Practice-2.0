@@ -3,6 +3,12 @@ import { getTimeEntries } from '../services/api';
 import type { TimeEntry } from '../types';
 import './Report.css';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+// FIX: Filter report by current attorney — same constant as Dashboard / Review.
+// Swap for auth context when multi-user login is added.
+const ATTORNEY_ID = 1;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtHours(units: number): string {
@@ -10,16 +16,7 @@ function fmtHours(units: number): string {
 }
 
 function fmtUnits(units: number): number {
-  return units; // 1 unit = 6 min; display raw
-}
-
-function currentMonthRange() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const start = new Date(year, month, 1).toISOString();
-  const end   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-  return { start, end, label: now.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }) };
+  return units;
 }
 
 // ─── Group entries by matter ───────────────────────────────────────────────────
@@ -54,79 +51,65 @@ function groupByMatter(entries: TimeEntry[]): MatterGroup[] {
   return [...map.values()].sort((a, b) => b.totalUnits - a.totalUnits);
 }
 
-// ─── Matter card (reference app style) ────────────────────────────────────────
+// ─── Matter card ──────────────────────────────────────────────────────────────
 
 function MatterCard({ group }: { group: MatterGroup }) {
-  const [open, setOpen] = useState(false);
   const sorted = [...group.entries].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
   return (
     <div className="matter-card">
-      {/* Card header strip */}
-      <button
-        className={`matter-card__header${open ? ' matter-card__header--open' : ''}`}
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-      >
+      {/* Card header */}
+      <div className="matter-card__header">
         <div className="matter-card__header-left">
-          <div>
-            <p className="matter-card__number">
-              {group.matter_number ?? <span className="matter-card__no-matter">No matter</span>}
-            </p>
-            <p className="matter-card__client">
-              {group.client_name ?? 'Unassigned'}
-            </p>
-          </div>
+          <p className="matter-card__number">
+            {group.matter_number ?? <span className="matter-card__no-matter">No matter</span>}
+          </p>
+          <p className="matter-card__client">
+            {group.client_name ?? 'Unassigned'}
+          </p>
         </div>
-        <div className="matter-card__header-right">
-          <div className="matter-card__subtotal">
-            <p className="matter-card__subtotal-label">Subtotal</p>
-            <p className="matter-card__subtotal-val">
-              {fmtHours(group.totalUnits)}h
-              <span className="matter-card__units"> · {fmtUnits(group.totalUnits)}u</span>
-            </p>
-          </div>
-          <span className="matter-card__chevron" aria-hidden="true">
-            {open ? '▾' : '▸'}
-          </span>
+        <div className="matter-card__subtotal">
+          <p className="matter-card__subtotal-label">Subtotal</p>
+          <p className="matter-card__subtotal-val">
+            {fmtHours(group.totalUnits)}h
+            <span className="matter-card__units"> · {fmtUnits(group.totalUnits)}u</span>
+          </p>
         </div>
-      </button>
+      </div>
 
-      {/* Expandable entry table */}
-      {open && (
-        <div className="matter-card__entries">
-          <table className="report-entry-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Narration</th>
-                <th className="col-right">Hrs</th>
-                <th className="col-right">Units</th>
+      {/* Entry table */}
+      <div className="matter-card__entries">
+        <table className="report-entry-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Narration</th>
+              <th className="col-right">Hrs</th>
+              <th className="col-right">Units</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(e => (
+              <tr key={e.entry_id}>
+                <td className="cell-date">
+                  {new Date(e.created_at).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' })}
+                </td>
+                <td>
+                  <span className="activity-pill-sm">{e.activity_type ?? '—'}</span>
+                </td>
+                <td className="cell-narration">
+                  {e.narration ?? <em className="text-muted">No narration</em>}
+                </td>
+                <td className="col-right mono-val">{fmtHours(e.duration_units ?? 0)}</td>
+                <td className="col-right mono-muted">{fmtUnits(e.duration_units ?? 0)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {sorted.map(e => (
-                <tr key={e.entry_id}>
-                  <td className="cell-date">
-                    {new Date(e.created_at).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' })}
-                  </td>
-                  <td>
-                    <span className="activity-pill-sm">{e.activity_type ?? '—'}</span>
-                  </td>
-                  <td className="cell-narration">
-                    {e.narration ?? <em className="text-muted">No narration</em>}
-                  </td>
-                  <td className="col-right mono-val">{fmtHours(e.duration_units ?? 0)}</td>
-                  <td className="col-right mono-muted">{fmtUnits(e.duration_units ?? 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -137,31 +120,41 @@ export default function Report() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // FIX: search state was declared but never had a wired <input> in the JSX.
   const [search, setSearch] = useState('');
+
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const { start, end, label } = useMemo(() => {
+  const { start, end } = useMemo(() => {
     const [y, m] = month.split('-').map(Number);
     const s = new Date(y, m - 1, 1).toISOString();
     const e = new Date(y, m, 0, 23, 59, 59).toISOString();
-    return {
-      start: s, end: e,
-      label: new Date(y, m - 1, 1).toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }),
-    };
+    return { start: s, end: e };
   }, [month]);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getTimeEntries({ status: 'confirmed' })
-      .then(all => setEntries(all.filter(e => e.created_at >= start && e.created_at <= end)))
+    // FIX: Pass attorney_id so report only shows the current attorney's entries.
+    getTimeEntries({ status: 'confirmed', attorney_id: ATTORNEY_ID })
+      .then(all => {
+        const startMs = new Date(start).getTime();
+        const endMs   = new Date(end).getTime();
+        return all.filter(e => {
+          const t = new Date(e.created_at).getTime();
+          return t >= startMs && t <= endMs;
+        });
+      })
+      .then(setEntries)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [start, end]);
 
+  // FIX: search filter now actually works because `search` is wired to an input below.
   const filtered = useMemo(() => {
     if (!search.trim()) return entries;
     const q = search.toLowerCase();
@@ -173,7 +166,7 @@ export default function Report() {
     );
   }, [entries, search]);
 
-  const groups = useMemo(() => groupByMatter(filtered), [filtered]);
+  const groups     = useMemo(() => groupByMatter(filtered), [filtered]);
   const totalUnits = filtered.reduce((sum, e) => sum + (e.duration_units ?? 0), 0);
 
   return (
@@ -182,9 +175,19 @@ export default function Report() {
       <header className="page-header">
         <div className="page-header__left">
           <h1 className="page-header__title">Fee Earner Report</h1>
-          <span className="badge badge--gold">{label}</span>
+          <p className="page-header__sub">All confirmed time entries grouped by matter.</p>
         </div>
+
         <div className="page-header__actions">
+          {/* FIX: search input now wired to `search` state — was missing from JSX entirely */}
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search matters, clients, narration…"
+            className="report-search-input"
+            aria-label="Search entries"
+          />
           <input
             type="month"
             value={month}
@@ -192,15 +195,7 @@ export default function Report() {
             className="report-month-input"
             aria-label="Select month"
           />
-          <input
-            className="report-search"
-            type="search"
-            placeholder="Search matter, client…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            aria-label="Search entries"
-          />
-          <button className="btn btn--ghost btn--sm report-export-btn">
+          <button className="btn btn--export">
             ↓ Export
           </button>
         </div>
@@ -224,24 +219,14 @@ export default function Report() {
 
         {!loading && !error && (
           <>
-            {/* ── Summary strip ── */}
-            <div className="report-summary">
-              <div className="report-summary__item">
-                <span className="report-summary__label">Total Hours</span>
-                <span className="report-summary__val">{fmtHours(totalUnits)}h</span>
+            {/* Search active but no results */}
+            {groups.length === 0 && search.trim() ? (
+              <div className="state-screen state-screen--empty">
+                <p className="state-screen__icon">🔍</p>
+                <p className="state-screen__title">No results for "{search}"</p>
+                <p className="state-screen__sub">Try a different matter number, client name, or activity type.</p>
               </div>
-              <div className="report-summary__item">
-                <span className="report-summary__label">Matters</span>
-                <span className="report-summary__val">{groups.length}</span>
-              </div>
-              <div className="report-summary__item">
-                <span className="report-summary__label">Entries</span>
-                <span className="report-summary__val">{filtered.length}</span>
-              </div>
-            </div>
-
-            {/* ── Matter cards ── */}
-            {groups.length === 0 ? (
+            ) : groups.length === 0 ? (
               <div className="state-screen state-screen--empty">
                 <p className="state-screen__icon">📋</p>
                 <p className="state-screen__title">No confirmed entries this month</p>
@@ -255,7 +240,7 @@ export default function Report() {
 
                 {/* Grand total */}
                 <div className="report-grand-total">
-                  <p className="report-grand-total__label">Grand total</p>
+                  <p className="report-grand-total__label">Grand Total</p>
                   <p className="report-grand-total__val">
                     {fmtHours(totalUnits)}h
                     <span className="report-grand-total__units"> · {fmtUnits(totalUnits)} units</span>

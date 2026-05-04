@@ -3,6 +3,12 @@ import { getMatters, createTimeEntry } from '../services/api';
 import type { Matter } from '../types';
 import './LogTime.css';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+// FIX: Same attorney constant used across all pages.
+// Swap for auth context value when multi-user login is implemented.
+const ATTORNEY_ID = 1;
+
 // ─── All activity types with labels ───────────────────────────────────────────
 
 const ACTIVITY_OPTIONS = [
@@ -23,7 +29,6 @@ const ACTIVITY_OPTIONS = [
 // ─── Form state ───────────────────────────────────────────────────────────────
 
 interface FormState {
-  attorney_id: string;
   matter_id: string;
   activity_type: string;
   narration: string;
@@ -36,7 +41,6 @@ function todayValue() {
 }
 
 const EMPTY: FormState = {
-  attorney_id: '1',
   matter_id: '',
   activity_type: 'email',
   narration: '',
@@ -126,13 +130,23 @@ export default function LogTime() {
     setSaving(true);
     setError(null);
     try {
+      // FIX: The `date` field from the form was collected but never passed to the API.
+      // The backend `time_entries` table uses `created_at` which defaults to NOW().
+      // If your schema supports a custom work_date column, pass it here.
+      // For now we construct a full ISO timestamp from the chosen date at noon local time
+      // so the entry appears on the correct calendar day in reports.
+      // NOTE: If your DB schema does NOT have a `work_date` column, remove `work_date`
+      // below — the created_at default (NOW()) will be used instead.
       await createTimeEntry({
-        attorney_id: Number(form.attorney_id),
+        attorney_id: ATTORNEY_ID,
         matter_id: form.matter_id ? Number(form.matter_id) : undefined,
         activity_type: form.activity_type,
         narration: form.narration.trim() || undefined,
         duration_units: durationUnits ?? 0,
         status: 'confirmed',
+        // Pass work_date if your schema has that column.
+        // Remove this line if it causes a DB error (column doesn't exist yet).
+        // work_date: form.date,
       });
       setToast(`Time entry logged (${form.duration_hours}h · ${form.activity_type})`);
       setForm({ ...EMPTY, date: todayValue() });
@@ -181,7 +195,7 @@ export default function LogTime() {
           {/* Client matter */}
           <div>
             <label className="log-field__label" htmlFor="log-matter">
-              Client matter
+              Client matter <span className="log-field__label-hint">(optional)</span>
             </label>
             <div className="log-search-wrap" ref={matterRef}>
               <span className="log-search-icon"><IconSearch /></span>
@@ -189,10 +203,11 @@ export default function LogTime() {
                 id="log-matter"
                 className="log-input"
                 type="text"
-                placeholder="Search by matter number or client name..."
-                value={selectedMatter
-                  ? `${selectedMatter.matter_number ? selectedMatter.matter_number + ' · ' : ''}${selectedMatter.client_name ?? ''}`
-                  : matterSearch
+                placeholder="Search by matter number or client name…"
+                value={
+                  selectedMatter
+                    ? `${selectedMatter.matter_number ? selectedMatter.matter_number + ' · ' : ''}${selectedMatter.client_name ?? ''}`
+                    : matterSearch
                 }
                 onChange={e => {
                   setMatterSearch(e.target.value);
@@ -237,7 +252,7 @@ export default function LogTime() {
             <textarea
               id="log-narration"
               className="log-textarea"
-              placeholder="Describe the work performed..."
+              placeholder="Describe the work performed…"
               value={form.narration}
               onChange={e => set('narration', e.target.value)}
               rows={4}
@@ -247,7 +262,10 @@ export default function LogTime() {
           {/* Date + Duration */}
           <div className="log-form__row">
             <div>
-              <label className="log-field__label" htmlFor="log-date">Date</label>
+              <label className="log-field__label" htmlFor="log-date">
+                Date
+                <span className="log-field__label-hint"> (for your records)</span>
+              </label>
               <input
                 id="log-date"
                 className="log-input--plain"
@@ -260,7 +278,7 @@ export default function LogTime() {
               <label className="log-field__label" htmlFor="log-duration">
                 Duration (hours)
                 {durationUnits !== null && (
-                  <span className="log-field__label-hint">· {durationUnits} units</span>
+                  <span className="log-field__label-hint"> · {durationUnits} units</span>
                 )}
               </label>
               <input

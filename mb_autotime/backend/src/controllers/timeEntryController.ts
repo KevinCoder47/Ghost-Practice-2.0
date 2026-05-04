@@ -65,7 +65,7 @@ export async function getTimeEntryById(req: Request, res: Response): Promise<voi
 }
 
 export async function createTimeEntry(req: Request, res: Response): Promise<void> {
-  const body = req.body as CreateTimeEntryBody;
+  const body = req.body as CreateTimeEntryBody & { work_date?: string };
   const { matter_id, attorney_id, activity_type, narration, status = 'pending' } = body;
 
   if (!attorney_id || !activity_type) {
@@ -78,12 +78,40 @@ export async function createTimeEntry(req: Request, res: Response): Promise<void
     duration_units = minutesToUnits(body.raw_duration_minutes);
   }
 
-  const { rows } = await pool.query<TimeEntry>(
-    `INSERT INTO time_entries (matter_id, attorney_id, activity_type, narration, duration_units, status)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
-    [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status]
-  );
+  // FIX: Support optional work_date from the LogTime form.
+  // If a work_date (YYYY-MM-DD) is provided, we insert it as created_at so the
+  // entry appears on the correct day in date-filtered reports.
+  // Falls back to DEFAULT (NOW()) if not provided.
+  let rows: TimeEntry[];
+
+  if (body.work_date) {
+    // Validate it's a real date string before using it
+    const parsedDate = new Date(body.work_date);
+    if (isNaN(parsedDate.getTime())) {
+      res.status(400).json({ error: 'Invalid work_date — expected YYYY-MM-DD' });
+      return;
+    }
+    // Set time to noon local so it doesn't roll back a day on UTC conversion
+    const isoDate = `${body.work_date}T12:00:00`;
+
+    const result = await pool.query<TimeEntry>(
+      `INSERT INTO time_entries
+         (matter_id, attorney_id, activity_type, narration, duration_units, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status, isoDate]
+    );
+    rows = result.rows;
+  } else {
+    const result = await pool.query<TimeEntry>(
+      `INSERT INTO time_entries
+         (matter_id, attorney_id, activity_type, narration, duration_units, status)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status]
+    );
+    rows = result.rows;
+  }
 
   res.status(201).json(rows[0]);
 }

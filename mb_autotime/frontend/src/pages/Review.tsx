@@ -2,7 +2,10 @@ import { usePendingEntries } from '../hooks/usePendingEntries';
 import { EntryCard } from '../components/EntryCard';
 import './Review.css';
 
-const ATTORNEY_ID = undefined;
+// FIX: Was `undefined` — caused all attorneys' pending entries to be fetched.
+// Set to 1 to match the hardcoded attorney (Kevin Mokoena).
+// Swap for auth context value when multi-user login is implemented.
+const ATTORNEY_ID = 1;
 
 // ─── Skeleton card ─────────────────────────────────────────────────────────────
 

@@ -1,179 +1,137 @@
 /* ─── Report page ─────────────────────────────────────────────────────────────── */
-.report-page { min-height: 100vh; }
+.report-page {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+/* Override page-header for light bg */
+.report-page .page-header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-page .page-header__title {
+  color: #111827;
+}
 
 /* ─── Header controls ─────────────────────────────────────────────────────────── */
 .report-month-input {
   font-family: var(--font-body);
   font-size: 0.85rem;
-  color: var(--text-primary);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   padding: 7px 10px;
   outline: none;
-  transition: border-color var(--t);
+  transition: border-color 160ms;
+  cursor: pointer;
 }
-.report-month-input:focus { border-color: var(--border-focus); }
+.report-month-input:focus { border-color: #6b7280; }
 
-.report-search {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--text-primary);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  outline: none;
-  width: 220px;
-  transition: border-color var(--t);
-}
-.report-search:focus { border-color: var(--border-focus); }
-.report-search::placeholder { color: var(--text-muted); }
-
-/* ─── Summary strip ───────────────────────────────────────────────────────────── */
-.report-summary {
-  display: flex;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  margin-bottom: 20px;
-  animation: fadeUp 300ms var(--ease) both;
-}
-
-.report-summary__item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+/* Export button — dark filled */
+.btn--export {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 18px 24px;
-  border-right: 1px solid var(--border);
-}
-.report-summary__item:last-child { border-right: none; }
-
-.report-summary__label {
-  font-size: 0.7rem;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #1f2937;
+  color: #fff;
+  letter-spacing: 0.01em;
+  transition: background 160ms;
+  white-space: nowrap;
 }
+.btn--export:hover { background: #111827; }
 
-.report-summary__val {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gold-bright);
-  letter-spacing: -0.03em;
+/* ─── Page body ───────────────────────────────────────────────────────────────── */
+.report-page .page-body {
+  padding: 28px 32px;
+  max-width: 1100px;
 }
 
 /* ─── Matter cards ────────────────────────────────────────────────────────────── */
 .report-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  animation: fadeUp 350ms var(--ease) 50ms both;
+  gap: 16px;
 }
 
 .matter-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
   overflow: hidden;
-  transition: border-color var(--t);
 }
 
-.matter-card:hover {
-  border-color: var(--border-light);
-}
-
-/* Card header strip (clickable) */
+/* Card header — always visible, not clickable */
 .matter-card__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: rgba(255,255,255,0.025);
-  border-bottom: 1px solid transparent;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: var(--font-body);
-  border: none;
-  transition: background var(--t);
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f3f4f6;
   gap: 12px;
 }
 
-.matter-card__header:hover { background: rgba(255,255,255,0.04); }
-
-.matter-card__header--open {
-  background: rgba(201,168,76,0.06);
-  border-bottom: 1px solid var(--border);
+.matter-card__header-left {
+  flex: 1;
+  min-width: 0;
 }
-
-.matter-card__header-left { flex: 1; min-width: 0; }
 
 .matter-card__number {
   font-family: var(--font-mono);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 3px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
 }
 
 .matter-card__no-matter {
   font-style: italic;
   font-weight: 400;
-  color: var(--text-muted);
+  color: #9ca3af;
 }
 
 .matter-card__client {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: #6b7280;
   margin: 0;
 }
 
-.matter-card__header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* Subtotal — top right */
+.matter-card__subtotal {
+  text-align: right;
   flex-shrink: 0;
 }
 
-.matter-card__subtotal {
-  text-align: right;
-}
-
 .matter-card__subtotal-label {
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
-  margin: 0 0 2px;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  margin: 0 0 3px;
 }
 
 .matter-card__subtotal-val {
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #111827;
   margin: 0;
 }
 
 .matter-card__units {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--text-muted);
-}
-
-.matter-card__chevron {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  width: 16px;
-  text-align: center;
-  user-select: none;
+  color: #9ca3af;
 }
 
 /* ─── Entry table inside card ─────────────────────────────────────────────────── */
@@ -182,77 +140,83 @@
 .report-entry-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.83rem;
+  font-size: 0.84rem;
 }
 
 .report-entry-table thead {
-  background: rgba(255,255,255,0.015);
-  border-bottom: 1px solid var(--border);
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .report-entry-table th {
-  padding: 9px 16px;
+  padding: 10px 20px;
   text-align: left;
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: 0.07em;
+  color: #9ca3af;
   white-space: nowrap;
 }
 
 .report-entry-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid rgba(35, 42, 59, 0.6);
-  vertical-align: top;
-  color: var(--text-secondary);
+  padding: 13px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  color: #374151;
 }
 
-.report-entry-table tbody tr:last-child td { border-bottom: none; }
-.report-entry-table tbody tr:hover td { background: rgba(255,255,255,0.015); }
+.report-entry-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.report-entry-table tbody tr:hover td {
+  background: #fafafa;
+}
 
 .col-right { text-align: right; }
 
 .cell-date {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #6b7280;
   white-space: nowrap;
   width: 72px;
 }
 
 .cell-narration {
-  color: var(--text-secondary);
-  font-size: 0.83rem;
-  line-height: 1.4;
+  color: #374151;
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .mono-val {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #111827;
   white-space: nowrap;
 }
 
 .mono-muted {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #9ca3af;
   white-space: nowrap;
 }
 
+/* Activity type pill */
 .activity-pill-sm {
   display: inline-block;
   font-size: 0.68rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
   border-radius: 20px;
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px solid var(--gold-border);
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   white-space: nowrap;
 }
 
@@ -261,18 +225,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #0f1929 0%, #162238 60%, #1a2640 100%);
-  border: 1px solid rgba(201,168,76,0.18);
-  border-radius: var(--radius);
+  padding: 18px 24px;
+  background: #1f2937;
+  border-radius: 10px;
 }
 
 .report-grand-total__label {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(232,234,240,0.45);
+  letter-spacing: 0.09em;
+  color: rgba(255, 255, 255, 0.45);
   margin: 0;
 }
 
@@ -287,7 +250,58 @@
 .report-grand-total__units {
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(232,234,240,0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.text-muted { color: var(--text-muted) !important; }
+/* ─── State screens (override for light bg) ───────────────────────────────────── */
+.report-page .state-screen {
+  color: #6b7280;
+}
+
+.report-page .state-screen__title {
+  color: #111827;
+}
+
+.report-page .spinner {
+  border-color: #e5e7eb;
+  border-top-color: #1f2937;
+}
+
+.text-muted { color: #9ca3af !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ADD THESE RULES TO YOUR EXISTING Report.css
+   (or replace the whole file with this if you prefer a clean slate)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* FIX: New search input — was missing from original Report.css entirely.
+   Place this alongside .report-month-input so they sit side by side. */
+.report-search-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #374151;
+  background: #fff;
+  outline: none;
+  width: 220px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.report-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.report-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Make the header actions row wrap nicely on smaller screens */
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

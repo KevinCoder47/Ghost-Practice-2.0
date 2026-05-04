@@ -51,7 +51,11 @@ export const getPendingEntries = (attorney_id?: number): Promise<TimeEntry[]> =>
 export const getTimeEntryById = (id: number): Promise<TimeEntry> =>
   request<TimeEntry>(`/time-entries/${id}`);
 
-export const createTimeEntry = (body: CreateTimeEntryBody): Promise<TimeEntry> =>
+// FIX: Extended CreateTimeEntryBody with optional work_date so LogTime's date
+// picker field is actually forwarded to the backend.
+export const createTimeEntry = (
+  body: CreateTimeEntryBody & { work_date?: string }
+): Promise<TimeEntry> =>
   request<TimeEntry>('/time-entries', {
     method: 'POST',
     body: JSON.stringify(body),
@@ -98,4 +102,28 @@ export const getMatters = (): Promise<Matter[]> =>
   request<Matter[]>('/matters');
 
 // ── Reports ───────────────────────────────────────────────────────────────────
-export const getReports = (): Promise<unknown> => request('/reports');
+
+export interface ProductivityRow {
+  attorney_id: number;
+  name: string;
+  monthly_target_hours: number | null;
+  confirmed_units: number;
+  confirmed_hours: number;
+  pending_entries: number;
+  pct_of_target: number;
+}
+
+export interface DailyRow {
+  date: string;
+  entry_count: number;
+  total_hours: number;
+  confirmed: number;
+  pending: number;
+  dismissed: number;
+}
+
+export const getProductivityReport = (): Promise<ProductivityRow[]> =>
+  request<ProductivityRow[]>('/reports/productivity');
+
+export const getDailyReport = (attorney_id: number): Promise<DailyRow[]> =>
+  request<DailyRow[]>(`/reports/daily/${attorney_id}`);

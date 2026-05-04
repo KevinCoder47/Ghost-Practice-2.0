@@ -7,6 +7,7 @@ import {
   patchTimeEntry,
   getMatters,
 } from '../services/api';
+import { usePendingCount } from '../context/PendingCountContext';
 
 interface UsePendingEntriesReturn {
   entries: TimeEntry[];
@@ -25,6 +26,7 @@ export function usePendingEntries(attorney_id?: number): UsePendingEntriesReturn
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const { refreshPendingCount } = usePendingCount();
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
@@ -63,16 +65,18 @@ export function usePendingEntries(attorney_id?: number): UsePendingEntriesReturn
     async (id: number) => {
       await confirmEntry(id);
       removeEntry(id);
+      refreshPendingCount();
     },
-    [removeEntry]
+    [removeEntry, refreshPendingCount]
   );
 
   const dismiss = useCallback(
     async (id: number) => {
       await dismissEntry(id);
       removeEntry(id);
+      refreshPendingCount();
     },
-    [removeEntry]
+    [removeEntry, refreshPendingCount]
   );
 
   const edit = useCallback(

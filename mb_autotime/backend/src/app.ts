@@ -2,10 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './config/db.js';
-import { errorHandler } from './middleware/errorHandler.ts';
+import { errorHandler } from './middleware/errorHandler.js';
 
 import mattersRouter from './routes/matters.js';
-import timeEntriesRouter from './routes/timeEntries.ts';
+import timeEntriesRouter from './routes/timeEntries.js';
 import activitiesRouter from './routes/activities.js';
 import reportsRouter from './routes/reports.js';
 
