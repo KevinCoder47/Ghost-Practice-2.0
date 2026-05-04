@@ -40,18 +40,26 @@ function greeting() {
 const DAILY_TARGET = 8;
 const WEEKLY_TARGET = 40;
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  email: '✉',  call: '📞', meeting: '👥',
-  draft: '✍',  review: '🔍', research: '📚',
-  court: '⚖',  consultation: '💬',
+// Maps activity type → icon class + emoji
+const ACTIVITY_ICON_MAP: Record<string, { cls: string; emoji: string }> = {
+  meeting:      { cls: 'db-recent__icon--meeting',  emoji: '👥' },
+  consultation: { cls: 'db-recent__icon--meeting',  emoji: '💬' },
+  call:         { cls: 'db-recent__icon--call',     emoji: '📞' },
+  email:        { cls: 'db-recent__icon--email',    emoji: '✉' },
+  draft:        { cls: 'db-recent__icon--document', emoji: '✍' },
+  review:       { cls: 'db-recent__icon--document', emoji: '📄' },
+  research:     { cls: 'db-recent__icon--document', emoji: '📋' },
+  court:        { cls: 'db-recent__icon--meeting',  emoji: '⚖' },
 };
 
-// ─── SVG icons ─────────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function IconTarget() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+      <circle cx="12" cy="12" r="10"/>
+      <circle cx="12" cy="12" r="6"/>
+      <circle cx="12" cy="12" r="2"/>
     </svg>
   );
 }
@@ -65,10 +73,11 @@ function IconInbox() {
   );
 }
 
-function IconCheck() {
+function IconCheckCircle() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
     </svg>
   );
 }
@@ -76,7 +85,8 @@ function IconCheck() {
 function IconClock() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
     </svg>
   );
 }
@@ -84,7 +94,8 @@ function IconClock() {
 function IconArrowRight() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+      <polyline points="12 5 19 12 12 19"/>
     </svg>
   );
 }
@@ -95,30 +106,39 @@ function DashboardSkeleton() {
   return (
     <div className="db-skeleton">
       <div className="db-skeleton__hero">
-        <div className="skeleton" style={{ height: 24, width: 200, marginBottom: 12 }} />
-        <div className="skeleton" style={{ height: 56, width: 140, marginBottom: 8 }} />
-        <div className="skeleton" style={{ height: 8, borderRadius: 20, marginTop: 16 }} />
+        <div className="skeleton" style={{ height: 16, width: 160, marginBottom: 12 }} />
+        <div className="skeleton" style={{ height: 52, width: 130, marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 6, borderRadius: 20, marginTop: 20 }} />
       </div>
       <div className="db-skeleton__counters">
         {[0, 1].map(i => (
-          <div key={i} className="card-surface" style={{ padding: 20, display: 'flex', gap: 14, alignItems: 'center' }}>
-            <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0 }} />
+          <div key={i} style={{
+            background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14,
+            padding: 20, display: 'flex', gap: 14, alignItems: 'center',
+          }}>
+            <div className="skeleton" style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div className="skeleton" style={{ height: 12, width: '60%', marginBottom: 8 }} />
-              <div className="skeleton" style={{ height: 28, width: '40%' }} />
+              <div className="skeleton" style={{ height: 28, width: '35%' }} />
             </div>
           </div>
         ))}
       </div>
-      <div className="card-surface" style={{ padding: 0, overflow: 'hidden' }}>
-        {[0, 1, 2, 3, 4].map(i => (
-          <div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} style={{
+            padding: '14px 24px', borderBottom: '1px solid #f9fafb',
+            display: 'flex', gap: 12, alignItems: 'center',
+          }}>
+            <div className="skeleton" style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div className="skeleton" style={{ height: 12, width: '40%', marginBottom: 6 }} />
-              <div className="skeleton" style={{ height: 11, width: '70%' }} />
+              <div className="skeleton" style={{ height: 11, width: '65%' }} />
             </div>
-            <div className="skeleton" style={{ height: 16, width: 40 }} />
+            <div style={{ textAlign: 'right' }}>
+              <div className="skeleton" style={{ height: 14, width: 36, marginBottom: 4 }} />
+              <div className="skeleton" style={{ height: 10, width: 30 }} />
+            </div>
           </div>
         ))}
       </div>
@@ -162,54 +182,35 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      {/* ── Header ── */}
-      <header className="page-header">
-        <div className="page-header__left">
-          <h1 className="page-header__title">Dashboard</h1>
-          <span className="page-header__sub">
-            {new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </span>
-        </div>
-        <div className="page-header__actions">
-          {!loading && pendingCount > 0 && (
-            <Link to="/pending" className="btn btn--ghost btn--sm">
-              <IconInbox /> {pendingCount} pending
-            </Link>
-          )}
-          <Link to="/log" className="btn btn--primary btn--sm">
-            + Log Time
-          </Link>
-        </div>
-      </header>
+      {/* ── Greeting header ── */}
+      <div className="db-inner-header">
+        <h2 className="db-greeting__text">Good {greeting()}, Kevin</h2>
+        <p className="db-greeting__sub">Here's your billing snapshot for today.</p>
+      </div>
 
-      <div className="page-body">
+      <div className="db-body">
         {loading && <DashboardSkeleton />}
 
         {!loading && error && (
-          <div className="state-screen state-screen--error">
-            <p className="state-screen__icon">⚠</p>
-            <p className="state-screen__title">Could not load data</p>
-            <p className="state-screen__sub">{error}</p>
+          <div style={{
+            background: '#fff', border: '1px solid #fecaca', borderRadius: 14,
+            padding: '40px 32px', textAlign: 'center', color: '#6b7280',
+          }}>
+            <p style={{ fontSize: '2rem', marginBottom: 8 }}>⚠</p>
+            <p style={{ fontWeight: 600, color: '#111827', marginBottom: 4 }}>Could not load data</p>
+            <p style={{ fontSize: '0.875rem' }}>{error}</p>
           </div>
         )}
 
         {!loading && !error && (
           <>
-            {/* ── Greeting ── */}
-            <div className="db-greeting">
-              <h2 className="db-greeting__text">
-                Good {greeting()}, Counsel
-              </h2>
-              <p className="db-greeting__sub">Here's your billing snapshot for today.</p>
-            </div>
-
-            {/* ── Hero grid: big hours card + week card ── */}
+            {/* ── Hero grid ── */}
             <div className="db-hero-grid">
-              {/* Today card — dark accent panel */}
+              {/* Today billable hours – dark accent card */}
               <div className="db-hero-card db-hero-card--accent">
                 <div className="db-hero-card__top">
                   <div>
-                    <p className="db-hero-card__label">Today's billable hours</p>
+                    <p className="db-hero-card__label">Today's Billable Hours</p>
                     <div className="db-hero-card__value-row">
                       <span className="db-hero-card__value">{todayHours.toFixed(1)}</span>
                       <span className="db-hero-card__denom">/ {DAILY_TARGET}h</span>
@@ -222,20 +223,20 @@ export default function Dashboard() {
                     <IconTarget />
                   </div>
                 </div>
-                <div className="progress-bar" style={{ marginTop: 20 }}>
+                <div className="progress-bar">
                   <div className="progress-bar__fill" style={{ width: `${todayPct}%` }} />
                 </div>
                 <p className="db-hero-card__pct">{Math.round(todayPct)}% of daily target</p>
               </div>
 
-              {/* Week card */}
-              <div className="card-surface db-week-card">
-                <p className="db-week-card__label">This week</p>
+              {/* This week */}
+              <div className="db-week-card">
+                <p className="db-week-card__label">This Week</p>
                 <div className="db-week-card__value-row">
                   <span className="db-week-card__value">{weekHours.toFixed(1)}h</span>
                   <span className="db-week-card__denom">/ {WEEKLY_TARGET}h</span>
                 </div>
-                <div className="progress-bar" style={{ marginTop: 16 }}>
+                <div className="progress-bar">
                   <div className="progress-bar__fill" style={{ width: `${weekPct}%` }} />
                 </div>
                 <p className="db-week-card__pct">{Math.round(weekPct)}% of weekly target</p>
@@ -244,8 +245,8 @@ export default function Dashboard() {
 
             {/* ── Counter cards ── */}
             <div className="db-counters">
-              <Link to="/pending" className="card-surface db-counter db-counter--link">
-                <div className="db-counter__icon-wrap db-counter__icon-wrap--gold">
+              <Link to="/pending" className="db-counter db-counter--link">
+                <div className="db-counter__icon-wrap db-counter__icon-wrap--pending">
                   <IconInbox />
                 </div>
                 <div className="db-counter__body">
@@ -255,9 +256,9 @@ export default function Dashboard() {
                 <span className="db-counter__arrow"><IconArrowRight /></span>
               </Link>
 
-              <div className="card-surface db-counter">
+              <div className="db-counter">
                 <div className="db-counter__icon-wrap db-counter__icon-wrap--confirm">
-                  <IconCheck />
+                  <IconCheckCircle />
                 </div>
                 <div className="db-counter__body">
                   <p className="db-counter__label">Confirmed today</p>
@@ -267,7 +268,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Recent activity ── */}
-            <div className="card-surface db-recent">
+            <div className="db-recent">
               <div className="db-recent__header">
                 <div className="db-recent__header-left">
                   <IconClock />
@@ -277,34 +278,40 @@ export default function Dashboard() {
               </div>
 
               {recent.length === 0 ? (
-                <div className="state-screen state-screen--empty" style={{ padding: '40px 24px' }}>
-                  <p className="state-screen__title">No confirmed entries yet</p>
-                  <p className="state-screen__sub">Approve entries from the Pending Tray.</p>
+                <div style={{ padding: '40px 24px', textAlign: 'center', color: '#9ca3af' }}>
+                  <p style={{ fontWeight: 600, color: '#374151', marginBottom: 4 }}>No confirmed entries yet</p>
+                  <p style={{ fontSize: '0.875rem' }}>Approve entries from the Pending Tray.</p>
                 </div>
               ) : (
                 <ul className="db-recent__list">
-                  {recent.map(e => (
-                    <li key={e.entry_id} className="db-recent__item">
-                      <span className="db-recent__icon" aria-hidden="true">
-                        {ACTIVITY_ICONS[e.activity_type ?? ''] ?? '⬡'}
-                      </span>
-                      <div className="db-recent__item-body">
-                        <p className="db-recent__item-title">
-                          {e.activity_type ?? 'Activity'}
-                          {e.matter_number ? ` · ${e.matter_number}` : ''}
-                        </p>
-                        <p className="db-recent__item-sub">
-                          {e.narration ?? <em>No narration</em>}
-                        </p>
-                      </div>
-                      <div className="db-recent__item-meta">
-                        <p className="db-recent__item-hours">{fmtHours(e.duration_units)}h</p>
-                        <p className="db-recent__item-date">
-                          {new Date(e.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
+                  {recent.map(e => {
+                    const actKey = (e.activity_type ?? '').toLowerCase();
+                    const iconInfo = ACTIVITY_ICON_MAP[actKey] ?? { cls: 'db-recent__icon--default', emoji: '⬡' };
+                    return (
+                      <li key={e.entry_id} className="db-recent__item">
+                        <span className={`db-recent__icon ${iconInfo.cls}`} aria-hidden="true">
+                          {iconInfo.emoji}
+                        </span>
+                        <div className="db-recent__item-body">
+                          <p className="db-recent__item-title">
+                            {e.activity_type
+                              ? e.activity_type.charAt(0).toUpperCase() + e.activity_type.slice(1)
+                              : 'Activity'}
+                            {e.matter_number ? ` · ${e.matter_number}` : ''}
+                          </p>
+                          <p className="db-recent__item-sub">
+                            {e.narration ?? 'No narration'}
+                          </p>
+                        </div>
+                        <div className="db-recent__item-meta">
+                          <p className="db-recent__item-hours">{fmtHours(e.duration_units)}h</p>
+                          <p className="db-recent__item-date">
+                            {new Date(e.created_at).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' })}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
