@@ -49,6 +49,14 @@ function IconFileText() {
   );
 }
 
+function IconZap() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  );
+}
+
 function IconBell() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -61,11 +69,12 @@ function IconBell() {
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { to: '/',        label: 'Dashboard',       icon: <IconGrid />,      badgeKey: null        },
-  { to: '/pending', label: 'Pending Tray',    icon: <IconInbox />,     badgeKey: 'pending'   },
-  { to: '/log',     label: 'Log Time',        icon: <IconPlus />,      badgeKey: null        },
-  { to: '/report',  label: 'Fee Earner Report', icon: <IconClipboard />, badgeKey: null      },
-  { to: '/invoice', label: 'Invoice Summary', icon: <IconFileText />,  badgeKey: null        },
+  { to: '/',            label: 'Dashboard',         icon: <IconGrid />,      badgeKey: null        },
+  { to: '/pending',     label: 'Pending Tray',      icon: <IconInbox />,     badgeKey: 'pending'   },
+  { to: '/log',         label: 'Log Time',          icon: <IconPlus />,      badgeKey: null        },
+  { to: '/report',      label: 'Fee Earner Report', icon: <IconClipboard />, badgeKey: null        },
+  { to: '/invoice',     label: 'Invoice Summary',   icon: <IconFileText />,  badgeKey: null        },
+  { to: '/gp-preview',  label: 'GP Preview',        icon: <IconZap />,       badgeKey: null        },
 ];
 
 // Hardcoded user – swap for auth context when available

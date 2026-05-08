@@ -1,5 +1,6 @@
 import { usePendingEntries } from '../hooks/usePendingEntries';
 import { EntryCard } from '../components/EntryCard';
+import { SimulatePanel } from '../components/SimulatePanel';
 import './Review.css';
 
 // FIX: Was `undefined` — caused all attorneys' pending entries to be fetched.
@@ -76,6 +77,12 @@ export default function Review() {
 
       {/* ── Body ── */}
       <main className="review-tray">
+        {/* Simulate panel — always visible, above the entry list */}
+        <SimulatePanel
+          attorneyId={ATTORNEY_ID}
+          onSimulated={refresh}
+        />
+
         {/* Loading skeleton */}
         {loading && (
           <div className="entry-list">
@@ -105,7 +112,7 @@ export default function Review() {
             </div>
             <h3 className="review-empty__title">You're all caught up!</h3>
             <p className="review-empty__sub">
-              No pending entries. New AI-drafted entries will appear here as your activity is captured.
+              Use the panel above to simulate activity, or wait for entries to appear automatically.
             </p>
           </div>
         )}

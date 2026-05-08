@@ -42,3 +42,6 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_matter   ON time_entries(matter_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_status   ON time_entries(status);
 CREATE INDEX IF NOT EXISTS idx_time_entries_created  ON time_entries(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activities_attorney   ON activities(attorney_id);
+
+ALTER TABLE matters   ADD COLUMN IF NOT EXISTS billing_rate  NUMERIC(10,2);
+ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS hourly_rate   NUMERIC(10,2);

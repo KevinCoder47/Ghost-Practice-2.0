@@ -6,6 +6,7 @@ import Review from './pages/Review';
 import Report from './pages/Report';
 import LogTime from './pages/LogTime';
 import Invoice from './pages/Invoice';
+import GhostPractice from './pages/GhostPractice';
 
 // Inner component so it can consume the context
 function AppRoutes() {
@@ -19,6 +20,7 @@ function AppRoutes() {
         <Route path="/report"  element={<Report />} />
         <Route path="/log"     element={<LogTime />} />
         <Route path="/invoice" element={<Invoice />} />
+        <Route path="/gp-preview" element={<GhostPractice />} />
       </Routes>
     </Layout>
   );
