@@ -186,9 +186,16 @@ export function EntryCard({ entry, matters, onConfirm, onDismiss, onEdit }: Entr
             {entry.activity_type ?? 'Unknown'}
           </span>
         </div>
-        <span className="entry-card__duration">
-          {unitsToHours(entry.duration_units)}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {entry.confidence && (
+            <span className={CONFIDENCE_STYLES[entry.confidence]}>
+              {entry.confidence}
+            </span>
+          )}
+          <span className="entry-card__duration">
+            {unitsToHours(entry.duration_units)}
+          </span>
+        </div>
       </div>
 
       <div className="entry-card__body">

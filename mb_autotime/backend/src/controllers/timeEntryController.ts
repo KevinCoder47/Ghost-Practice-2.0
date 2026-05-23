@@ -32,7 +32,7 @@ export async function getTimeEntries(req: Request, res: Response): Promise<void>
      LEFT JOIN matters m ON te.matter_id = m.matter_id
      LEFT JOIN attorneys a ON te.attorney_id = a.attorney_id
      ${where}
-     ORDER BY te.created_at DESC`,
+     ORDER BY te.work_date DESC`,
     params
   );
 
@@ -65,8 +65,8 @@ export async function getTimeEntryById(req: Request, res: Response): Promise<voi
 }
 
 export async function createTimeEntry(req: Request, res: Response): Promise<void> {
-  const body = req.body as CreateTimeEntryBody & { work_date?: string };
-  const { matter_id, attorney_id, activity_type, narration, status = 'pending' } = body;
+  const body = req.body as CreateTimeEntryBody & { work_date?: string; confidence?: 'high' | 'medium' | 'low' | null };
+  const { matter_id, attorney_id, activity_type, narration, status = 'pending', confidence = null } = body;
 
   if (!attorney_id || !activity_type) {
     res.status(400).json({ error: 'attorney_id and activity_type are required' });
@@ -78,47 +78,31 @@ export async function createTimeEntry(req: Request, res: Response): Promise<void
     duration_units = minutesToUnits(body.raw_duration_minutes);
   }
 
-  // FIX: Support optional work_date from the LogTime form.
-  // If a work_date (YYYY-MM-DD) is provided, we insert it as created_at so the
-  // entry appears on the correct day in date-filtered reports.
-  // Falls back to DEFAULT (NOW()) if not provided.
-  let rows: TimeEntry[];
+  // Strip any time/timezone component — keep only the YYYY-MM-DD part.
+  // This prevents UTC offset from shifting the date when the server or client
+  // is in a non-UTC timezone (e.g. SAST UTC+2 would otherwise roll back a day).
+  const rawDate = body.work_date ?? new Date().toISOString().slice(0, 10);
+  const work_date = rawDate.slice(0, 10);
 
-  if (body.work_date) {
-    // Validate it's a real date string before using it
-    const parsedDate = new Date(body.work_date);
-    if (isNaN(parsedDate.getTime())) {
-      res.status(400).json({ error: 'Invalid work_date — expected YYYY-MM-DD' });
-      return;
-    }
-    // Set time to noon local so it doesn't roll back a day on UTC conversion
-    const isoDate = `${body.work_date}T12:00:00`;
-
-    const result = await pool.query<TimeEntry>(
-      `INSERT INTO time_entries
-         (matter_id, attorney_id, activity_type, narration, duration_units, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status, isoDate]
-    );
-    rows = result.rows;
-  } else {
-    const result = await pool.query<TimeEntry>(
-      `INSERT INTO time_entries
-         (matter_id, attorney_id, activity_type, narration, duration_units, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status]
-    );
-    rows = result.rows;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(work_date) || isNaN(new Date(work_date).getTime())) {
+    res.status(400).json({ error: 'Invalid work_date — expected YYYY-MM-DD' });
+    return;
   }
 
-  res.status(201).json(rows[0]);
+  const result = await pool.query<TimeEntry>(
+    `INSERT INTO time_entries
+       (matter_id, attorney_id, activity_type, narration, duration_units, status, work_date, confidence)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8)
+     RETURNING *`,
+    [matter_id ?? null, attorney_id, activity_type, narration ?? null, duration_units, status, work_date, confidence]
+  );
+
+  res.status(201).json(result.rows[0]);
 }
 
 export async function patchTimeEntry(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const body = req.body as PatchTimeEntryBody;
+  const body = req.body as PatchTimeEntryBody & { confidence?: 'high' | 'medium' | 'low' | null };
 
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -143,6 +127,10 @@ export async function patchTimeEntry(req: Request, res: Response): Promise<void>
     }
     params.push(body.status);
     fields.push(`status = $${params.length}`);
+  }
+  if (body.confidence !== undefined) {
+    params.push(body.confidence);
+    fields.push(`confidence = $${params.length}`);
   }
 
   if (fields.length === 0) {

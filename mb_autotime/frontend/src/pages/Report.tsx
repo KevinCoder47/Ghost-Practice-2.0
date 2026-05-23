@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getTimeEntries } from '../services/api';
+import { getTimeEntries, getProductivityReport, getBillingRateMap } from '../services/api';
+import type { ProductivityRow } from '../services/api';
 import type { TimeEntry } from '../types';
 import './Report.css';
 
@@ -19,6 +20,10 @@ function fmtUnits(units: number): number {
   return units;
 }
 
+function fmtCurrency(amount: number): string {
+  return 'R ' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 // ─── Group entries by matter ───────────────────────────────────────────────────
 
 interface MatterGroup {
@@ -28,12 +33,16 @@ interface MatterGroup {
   matter_description: string | null;
   entries: TimeEntry[];
   totalUnits: number;
+  totalValue: number;
+  rate: number;
 }
 
-function groupByMatter(entries: TimeEntry[]): MatterGroup[] {
+function groupByMatter(entries: TimeEntry[], rateMap: Map<string, number>): MatterGroup[] {
+  const DEFAULT_RATE = 350;
   const map = new Map<string, MatterGroup>();
   for (const e of entries) {
     const key = String(e.matter_id ?? 'none');
+    const rate = rateMap.get(key) ?? DEFAULT_RATE;
     if (!map.has(key)) {
       map.set(key, {
         matter_id: e.matter_id ?? null,
@@ -42,11 +51,14 @@ function groupByMatter(entries: TimeEntry[]): MatterGroup[] {
         matter_description: e.matter_description ?? null,
         entries: [],
         totalUnits: 0,
+        totalValue: 0,
+        rate,
       });
     }
     const g = map.get(key)!;
     g.entries.push(e);
     g.totalUnits += e.duration_units ?? 0;
+    g.totalValue += (e.duration_units ?? 0) * 0.1 * rate;
   }
   return [...map.values()].sort((a, b) => b.totalUnits - a.totalUnits);
 }
@@ -76,6 +88,7 @@ function MatterCard({ group }: { group: MatterGroup }) {
             {fmtHours(group.totalUnits)}h
             <span className="matter-card__units"> · {fmtUnits(group.totalUnits)}u</span>
           </p>
+          <p className="matter-card__subtotal-value">{fmtCurrency(group.totalValue)}</p>
         </div>
       </div>
 
@@ -89,6 +102,7 @@ function MatterCard({ group }: { group: MatterGroup }) {
               <th>Narration</th>
               <th className="col-right">Hrs</th>
               <th className="col-right">Units</th>
+              <th className="col-right">Value</th>
             </tr>
           </thead>
           <tbody>
@@ -105,6 +119,9 @@ function MatterCard({ group }: { group: MatterGroup }) {
                 </td>
                 <td className="col-right mono-val">{fmtHours(e.duration_units ?? 0)}</td>
                 <td className="col-right mono-muted">{fmtUnits(e.duration_units ?? 0)}</td>
+                <td className="col-right mono-val cell-value">
+                  {fmtCurrency((e.duration_units ?? 0) * 0.1 * group.rate)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -120,6 +137,8 @@ export default function Report() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [productivity, setProductivity] = useState<ProductivityRow | null>(null);
+  const [rateMap, setRateMap] = useState<Map<string, number>>(new Map());
 
   // FIX: search state was declared but never had a wired <input> in the JSX.
   const [search, setSearch] = useState('');
@@ -139,8 +158,8 @@ export default function Report() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    // FIX: Pass attorney_id so report only shows the current attorney's entries.
-    getTimeEntries({ status: 'confirmed', attorney_id: ATTORNEY_ID })
+
+    const entriesPromise = getTimeEntries({ status: 'confirmed', attorney_id: ATTORNEY_ID })
       .then(all => {
         const startMs = new Date(start).getTime();
         const endMs   = new Date(end).getTime();
@@ -148,8 +167,22 @@ export default function Report() {
           const t = new Date(e.created_at).getTime();
           return t >= startMs && t <= endMs;
         });
+      });
+
+    const productivityPromise = getProductivityReport()
+      .then(rows => {
+        const row = rows.find(r => r.attorney_id === ATTORNEY_ID) ?? null;
+        setProductivity(row);
       })
-      .then(setEntries)
+      .catch(() => setProductivity(null));
+
+    Promise.all([entriesPromise, productivityPromise])
+      .then(([filtered]) => {
+        setEntries(filtered);
+        if (filtered.length > 0) {
+          return getBillingRateMap(filtered, ATTORNEY_ID).then(setRateMap).catch(() => {});
+        }
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [start, end]);
@@ -166,8 +199,9 @@ export default function Report() {
     );
   }, [entries, search]);
 
-  const groups     = useMemo(() => groupByMatter(filtered), [filtered]);
+  const groups     = useMemo(() => groupByMatter(filtered, rateMap), [filtered, rateMap]);
   const totalUnits = filtered.reduce((sum, e) => sum + (e.duration_units ?? 0), 0);
+  const totalValue = groups.reduce((sum, g) => sum + g.totalValue, 0);
 
   return (
     <div className="report-page">
@@ -219,6 +253,50 @@ export default function Report() {
 
         {!loading && !error && (
           <>
+            {/* Productivity strip */}
+            {productivity && (
+              <div className="report-productivity-strip">
+                <div className="report-productivity-strip__stat">
+                  <span className="report-productivity-strip__label">Confirmed</span>
+                  <span className="report-productivity-strip__val">{productivity.confirmed_hours}h</span>
+                </div>
+                <div className="report-productivity-strip__divider" />
+                <div className="report-productivity-strip__stat">
+                  <span className="report-productivity-strip__label">Target</span>
+                  <span className="report-productivity-strip__val">
+                    {productivity.monthly_target_hours ?? '—'}h
+                  </span>
+                </div>
+                <div className="report-productivity-strip__divider" />
+                <div className="report-productivity-strip__stat">
+                  <span className="report-productivity-strip__label">Pending</span>
+                  <span className="report-productivity-strip__val report-productivity-strip__val--pending">
+                    {productivity.pending_entries}
+                  </span>
+                </div>
+                <div className="report-productivity-strip__divider" />
+                <div className="report-productivity-strip__progress-wrap">
+                  <div className="report-productivity-strip__progress-header">
+                    <span className="report-productivity-strip__label">vs Target</span>
+                    <span className="report-productivity-strip__pct">
+                      {productivity.pct_of_target}%
+                    </span>
+                  </div>
+                  <div className="report-productivity-strip__bar">
+                    <div
+                      className={`report-productivity-strip__fill ${
+                        productivity.pct_of_target >= 100
+                          ? 'report-productivity-strip__fill--complete'
+                          : productivity.pct_of_target >= 60
+                          ? 'report-productivity-strip__fill--mid'
+                          : 'report-productivity-strip__fill--low'
+                      }`}
+                      style={{ width: `${Math.min(productivity.pct_of_target, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Search active but no results */}
             {groups.length === 0 && search.trim() ? (
               <div className="state-screen state-screen--empty">
@@ -245,6 +323,7 @@ export default function Report() {
                     {fmtHours(totalUnits)}h
                     <span className="report-grand-total__units"> · {fmtUnits(totalUnits)} units</span>
                   </p>
+                  <p className="report-grand-total__value">{fmtCurrency(totalValue)}</p>
                 </div>
               </div>
             )}

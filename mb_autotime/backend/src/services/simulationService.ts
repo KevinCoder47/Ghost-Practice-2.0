@@ -9,6 +9,9 @@ import pool from '../config/db.js';
 import { minutesToUnits } from './roundingService.js';
 import { getSuggestion } from './matchingService.js';
 
+// Helper to prevent API rate limiting
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 interface SimulatedEntry {
   activity_type: string;
   contact_name: string;
@@ -54,25 +57,30 @@ export async function generateSimulatedEntries(
       narration: suggestion.narration,
       confidence: suggestion.confidence,
     });
+
+    // 🧠 WAIT 0.8 seconds between AI calls to avoid triggering Google's 429 quota block
+    await delay(800); 
   }
 
   return results;
 }
 
 export async function seedSimulatedTimeEntries(attorneyId: number): Promise<number> {
-  const entries = await generateSimulatedEntries(attorneyId, 7);
+  // Reduce to 5 maximum for Free Tier safety
+  const entries = await generateSimulatedEntries(attorneyId, 5); 
   let inserted = 0;
 
   for (const entry of entries) {
     await pool.query(
-      `INSERT INTO time_entries (matter_id, attorney_id, activity_type, narration, duration_units, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending')`,
+      `INSERT INTO time_entries (matter_id, attorney_id, activity_type, narration, duration_units, status, confidence)
+       VALUES ($1, $2, $3, $4, $5, 'pending', $6)`,
       [
         entry.suggested_matter_id,
         attorneyId,
         entry.activity_type,
         entry.narration,
         entry.duration_units,
+        entry.confidence,
       ]
     );
     inserted++;

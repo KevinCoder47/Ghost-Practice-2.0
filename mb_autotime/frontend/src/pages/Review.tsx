@@ -48,7 +48,7 @@ function IconInboxEmpty() {
 // ─── Review page ───────────────────────────────────────────────────────────────
 
 export default function Review() {
-  const { entries, matters, loading, error, confirm, dismiss, edit, refresh } =
+  const { entries, matters, loading, error, confirm, confirmAll, dismiss, edit, refresh } =
     usePendingEntries(ATTORNEY_ID);
 
   return (
@@ -64,6 +64,15 @@ export default function Review() {
           )}
         </div>
         <div className="page-header__actions">
+          {!loading && entries.length > 1 && (
+            <button
+              className="btn btn--confirm-all btn--sm"
+              onClick={confirmAll}
+              aria-label="Confirm all pending entries"
+            >
+              ✓ Confirm All
+            </button>
+          )}
           <button
             className="btn btn--ghost btn--sm"
             onClick={refresh}

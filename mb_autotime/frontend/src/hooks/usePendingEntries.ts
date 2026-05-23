@@ -15,6 +15,7 @@ interface UsePendingEntriesReturn {
   loading: boolean;
   error: string | null;
   confirm: (id: number) => Promise<void>;
+  confirmAll: () => Promise<void>;
   dismiss: (id: number) => Promise<void>;
   edit: (id: number, body: PatchTimeEntryBody) => Promise<void>;
   refresh: () => void;
@@ -79,6 +80,13 @@ export function usePendingEntries(attorney_id?: number): UsePendingEntriesReturn
     [removeEntry, refreshPendingCount]
   );
 
+  const confirmAll = useCallback(async () => {
+    const ids = entries.map((e) => e.entry_id);
+    await Promise.all(ids.map((id) => confirmEntry(id)));
+    setEntries([]);
+    refreshPendingCount();
+  }, [entries, refreshPendingCount]);
+
   const edit = useCallback(
     async (id: number, body: PatchTimeEntryBody) => {
       // Patch the fields, then confirm in one shot
@@ -96,5 +104,5 @@ export function usePendingEntries(attorney_id?: number): UsePendingEntriesReturn
     [removeEntry]
   );
 
-  return { entries, matters, loading, error, confirm, dismiss, edit, refresh };
+  return { entries, matters, loading, error, confirm, confirmAll, dismiss, edit, refresh };
 }

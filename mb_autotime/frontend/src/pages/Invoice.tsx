@@ -150,7 +150,7 @@ interface GPPreviewProps {
 
 function GPPreviewModal({ group, month, onClose }: GPPreviewProps) {
   const sorted = [...group.entries].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    (a, b) => new Date(a.work_date).getTime() - new Date(b.work_date).getTime()
   );
 
   const [y, m] = month.split('-').map(Number);
@@ -213,7 +213,7 @@ function GPPreviewModal({ group, month, onClose }: GPPreviewProps) {
             <tbody>
               {sorted.map((e, i) => (
                 <tr key={e.entry_id} className={i % 2 === 0 ? 'gp-tr' : 'gp-tr gp-tr--alt'}>
-                  <td className="gp-td gp-td--date">{fmtDateShort(e.created_at)}</td>
+                  <td className="gp-td gp-td--date">{fmtDateShort(e.work_date)}</td>
                   <td className="gp-td gp-td--code">{getGPCode(e.activity_type)}</td>
                   <td className="gp-td gp-td--narration">{e.narration ?? '—'}</td>
                   <td className="gp-td gp-td--right">{e.duration_units ?? 0}</td>
@@ -358,7 +358,7 @@ function InvoiceCard({ group, index, onPreview }: InvoiceCardProps) {
             <tbody>
               {sorted.map(e => (
                 <tr key={e.entry_id} className="inv-tr">
-                  <td className="inv-td inv-td--date">{fmtDateShort(e.created_at)}</td>
+                  <td className="inv-td inv-td--date">{fmtDateShort(e.work_date)}</td>
                   <td className="inv-td">
                     <span className="inv-gp-code">{getGPCode(e.activity_type)}</span>
                   </td>

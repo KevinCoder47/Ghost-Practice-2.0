@@ -24,7 +24,7 @@ export async function getProductivityReport(_req: Request, res: Response): Promi
       ) AS pct_of_target
     FROM attorneys a
     LEFT JOIN time_entries te ON a.attorney_id = te.attorney_id
-      AND DATE_TRUNC('month', te.created_at) = DATE_TRUNC('month', NOW())
+      AND DATE_TRUNC('month', te.work_date) = DATE_TRUNC('month', CURRENT_DATE)
     GROUP BY a.attorney_id, a.name, a.monthly_target_hours
     ORDER BY a.attorney_id
   `);
@@ -38,7 +38,7 @@ export async function getDailyReport(req: Request, res: Response): Promise<void>
 
   const { rows } = await pool.query(`
     SELECT
-      DATE(te.created_at) AS date,
+      te.work_date AS date,
       COUNT(*) AS entry_count,
       ROUND(SUM(te.duration_units) * 0.1, 1) AS total_hours,
       COUNT(*) FILTER (WHERE te.status = 'confirmed') AS confirmed,
@@ -46,8 +46,8 @@ export async function getDailyReport(req: Request, res: Response): Promise<void>
       COUNT(*) FILTER (WHERE te.status = 'dismissed') AS dismissed
     FROM time_entries te
     WHERE te.attorney_id = $1
-      AND te.created_at >= NOW() - INTERVAL '30 days'
-    GROUP BY DATE(te.created_at)
+      AND te.work_date >= CURRENT_DATE - INTERVAL '30 days'
+    GROUP BY te.work_date
     ORDER BY date DESC
   `, [attorney_id]);
 

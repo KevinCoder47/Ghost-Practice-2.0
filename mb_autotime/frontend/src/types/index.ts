@@ -22,7 +22,9 @@ export interface TimeEntry {
   narration: string | null;
   duration_units: number | null; // 1 unit = 0.1 h = 6 min
   status: 'pending' | 'confirmed' | 'dismissed';
+  work_date: string;       // YYYY-MM-DD — the date the work actually occurred
   created_at: string;
+  confidence?: 'high' | 'medium' | 'low' | null;
   // Joined fields returned by GET /time-entries
   matter_number?: string | null;
   client_name?: string | null;
@@ -51,6 +53,7 @@ export interface CreateTimeEntryBody {
   duration_units?: number;
   raw_duration_minutes?: number;
   status?: 'pending' | 'confirmed' | 'dismissed';
+  confidence?: 'high' | 'medium' | 'low';
 }
 
 export interface PatchTimeEntryBody {

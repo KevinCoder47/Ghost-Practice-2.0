@@ -22,7 +22,8 @@ export interface TimeEntry {
   narration: string | null;
   duration_units: number | null; // in 6-min units (0.1 h each)
   status: 'pending' | 'confirmed' | 'dismissed';
-  created_at: Date;
+  work_date: string;  // YYYY-MM-DD — the date the work actually occurred
+  created_at: Date;   // system timestamp — when the record was saved
 }
 
 export interface Activity {
@@ -45,6 +46,7 @@ export interface CreateTimeEntryBody {
   duration_units?: number;       // If provided, skips rounding
   raw_duration_minutes?: number; // Source for rounding if duration_units not given
   status?: 'pending' | 'confirmed' | 'dismissed';
+  work_date?: string;            // YYYY-MM-DD — defaults to today if omitted
 }
 
 export interface PatchTimeEntryBody {

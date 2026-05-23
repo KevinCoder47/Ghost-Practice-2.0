@@ -130,13 +130,9 @@ export default function LogTime() {
     setSaving(true);
     setError(null);
     try {
-      // FIX: The `date` field from the form was collected but never passed to the API.
-      // The backend `time_entries` table uses `created_at` which defaults to NOW().
-      // If your schema supports a custom work_date column, pass it here.
-      // For now we construct a full ISO timestamp from the chosen date at noon local time
-      // so the entry appears on the correct calendar day in reports.
-      // NOTE: If your DB schema does NOT have a `work_date` column, remove `work_date`
-      // below — the created_at default (NOW()) will be used instead.
+      // work_date (YYYY-MM-DD) is forwarded to the backend, which inserts it as
+      // created_at at noon local time so the entry lands on the correct calendar
+      // day in date-filtered reports regardless of UTC offset.
       await createTimeEntry({
         attorney_id: ATTORNEY_ID,
         matter_id: form.matter_id ? Number(form.matter_id) : undefined,
@@ -144,9 +140,7 @@ export default function LogTime() {
         narration: form.narration.trim() || undefined,
         duration_units: durationUnits ?? 0,
         status: 'confirmed',
-        // Pass work_date if your schema has that column.
-        // Remove this line if it causes a DB error (column doesn't exist yet).
-        // work_date: form.date,
+        work_date: form.date,
       });
       setToast(`Time entry logged (${form.duration_hours}h · ${form.activity_type})`);
       setForm({ ...EMPTY, date: todayValue() });
@@ -264,7 +258,6 @@ export default function LogTime() {
             <div>
               <label className="log-field__label" htmlFor="log-date">
                 Date
-                <span className="log-field__label-hint"> (for your records)</span>
               </label>
               <input
                 id="log-date"

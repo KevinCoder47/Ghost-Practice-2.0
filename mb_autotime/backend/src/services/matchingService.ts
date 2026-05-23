@@ -1,133 +1,82 @@
-/**
- * matchingService.ts
- *
- * Given an activity (contact name, subject, activity type), find the most
- * likely matter from the database. Uses a tiered matching strategy:
- *
- *  Tier 1 – Exact client_name match        → confidence: high
- *  Tier 2 – Partial client_name match      → confidence: medium
- *  Tier 3 – matter_description keyword hit → confidence: medium
- *  Tier 4 – No match found                 → confidence: low, matter: null
- *
- * Attorneys can confirm/correct entries, and future versions can record those
- * corrections to improve per-attorney matching (GP training loop).
- */
-
 import pool from '../config/db.js';
 import type { Matter, SuggestionRequest, SuggestionResponse } from '../models/timeEntryModel.js';
-import { generateNarration } from './narrationService.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Safely initialize the Gemini client
+const apiKey = process.env.GEMINI_API_KEY?.trim();
+const genAI = apiKey && !apiKey.startsWith('your-') && !apiKey.startsWith('sk-') 
+  ? new GoogleGenerativeAI(apiKey) 
+  : null;
 
-function normalise(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-}
+export async function getSuggestion(req: SuggestionRequest): Promise<SuggestionResponse> {
+  const { activity_type, contact_name, subject = '' } = req;
 
-function tokenOverlap(a: string, b: string): number {
-  const tokensA = new Set(normalise(a).split(/\s+/));
-  const tokensB = new Set(normalise(b).split(/\s+/));
-  let hits = 0;
-  tokensA.forEach((t) => { if (tokensB.has(t)) hits++; });
-  return hits;
-}
+  // 1. Fetch matters from DB (keep this fast)
+  const { rows: matters }: { rows: Matter[] } = await pool.query('SELECT * FROM matters');
 
-// ─── Core matching logic ───────────────────────────────────────────────────────
-
-async function findBestMatter(
-  contactName: string,
-  subject: string = ''
-): Promise<{ matter: Matter | null; confidence: 'high' | 'medium' | 'low'; reason: string }> {
-  const { rows: matters }: { rows: Matter[] } = await pool.query(
-    'SELECT * FROM matters ORDER BY matter_id'
-  );
-
-  if (matters.length === 0) {
-    return { matter: null, confidence: 'low', reason: 'No matters in database' };
-  }
-
-  // ── Tier 1: exact client name match ─────────────────────────────────────────
-  const exactMatch = matters.find(
-    (m) => m.client_name && normalise(m.client_name) === normalise(contactName)
-  );
-  if (exactMatch) {
-    return {
-      matter: exactMatch,
-      confidence: 'high',
-      reason: `Exact client match: "${exactMatch.client_name}"`,
-    };
-  }
-
-  // ── Tier 2: partial client name (contact name contains client or vice versa) ─
-  const partialMatch = matters.find((m) => {
-    if (!m.client_name) return false;
-    const nc = normalise(m.client_name);
-    const nn = normalise(contactName);
-    return nc.includes(nn) || nn.includes(nc);
-  });
-  if (partialMatch) {
-    return {
-      matter: partialMatch,
-      confidence: 'medium',
-      reason: `Partial client match: "${partialMatch.client_name}"`,
-    };
-  }
-
-  // ── Tier 3: keyword overlap with matter description or subject ───────────────
-  let bestScore = 0;
-  let bestMatter: Matter | null = null;
-
-  for (const matter of matters) {
-    const descScore = matter.matter_description
-      ? tokenOverlap(subject, matter.matter_description)
-      : 0;
-    const clientScore = matter.client_name
-      ? tokenOverlap(contactName, matter.client_name)
-      : 0;
-    const score = descScore * 2 + clientScore; // weight description hits more
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatter = matter;
+  try {
+    if (!genAI) {
+      throw new Error("No valid Gemini API key found.");
     }
-  }
 
-  if (bestMatter && bestScore > 0) {
+    // 2. Use Lite model to save quota and increase speed
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+    const matterContext = matters.map(m => 
+      `ID:${m.matter_id} | Client:${m.client_name} | Desc:${m.matter_description}`
+    ).join('\n');
+
+    // 3. THE "ALL-IN-ONE" PROMPT
+    const prompt = `You are a legal assistant. Match this activity to a matter and write a billing narration.
+
+ACTIVITY: ${activity_type} with ${contact_name} regarding "${subject}"
+
+MATTERS:
+${matterContext}
+
+TASK:
+1. Pick the best Matter ID (or 0 if no match).
+2. Write a 1-sentence professional billing narration (gerund-start, formal).
+3. Give a short reason for the match.
+
+OUTPUT FORMAT (JSON ONLY):
+{
+  "id": number,
+  "narration": "string",
+  "reason": "string",
+  "confidence": "high" | "medium" | "low"
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    
+    // Clean markdown formatting if Gemini wraps the response in ```json ... ```
+    const cleanJsonText = response.text().replace(/```json|```/g, '').trim();
+    const data = JSON.parse(cleanJsonText);
+
+    const matchedMatter = matters.find(m => m.matter_id === data.id) || null;
+
     return {
-      matter: bestMatter,
-      confidence: 'medium',
-      reason: `Keyword match (score ${bestScore}) on subject/description`,
+      suggested_matter: matchedMatter,
+      narration: data.narration,
+      confidence: data.confidence,
+      match_reason: data.reason,
+    };
+
+  } catch (err: any) {
+    console.warn("⚠️ AI Busy or Limit Hit, using fallback:", err.message);
+    
+    // 4. Basic fallback matching if API fails or rate-limits
+    const fallbackMatter = matters.find(m => 
+      m.client_name?.toLowerCase().includes(contact_name.toLowerCase()) ||
+      contact_name.toLowerCase().includes(m.client_name?.toLowerCase())
+    ) || null;
+
+    return {
+      suggested_matter: fallbackMatter,
+      narration: `Attending to ${activity_type} with ${contact_name}${subject ? ` re ${subject}` : ''}.`,
+      confidence: fallbackMatter ? 'medium' : 'low',
+      match_reason: 'Fallback used due to API limits.'
     };
   }
-
-  // ── Tier 4: no match ─────────────────────────────────────────────────────────
-  return {
-    matter: null,
-    confidence: 'low',
-    reason: 'No matching matter found — manual assignment required',
-  };
-}
-
-// ─── Public API ───────────────────────────────────────────────────────────────
-
-export async function getSuggestion(
-  req: SuggestionRequest
-): Promise<SuggestionResponse> {
-  const { activity_type, contact_name, subject = '', attorney_id } = req;
-
-  const { matter, confidence, reason } = await findBestMatter(contact_name, subject);
-
-  const narration = await generateNarration({
-    activity_type,
-    contact_name,
-    subject,
-    matter_description: matter?.matter_description ?? undefined,
-    attorney_id,
-  });
-
-  return {
-    suggested_matter: matter,
-    narration,
-    confidence,
-    match_reason: reason,
-  };
 }
