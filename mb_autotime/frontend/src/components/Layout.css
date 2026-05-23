@@ -1,0 +1,326 @@
+/* ─── Shell ───────────────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  min-height: 100svh;
+  width: 100%;
+}
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--nav-width);
+  flex-shrink: 0;
+  background: #151c2c;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  z-index: 20;
+}
+
+/* Brand */
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.sidebar__logo {
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #8bc34a;
+  border-radius: 8px;
+  flex-shrink: 0;
+  color: #0f1a0a;
+}
+
+.sidebar__app-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #e8eaf0;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.sidebar__firm {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* Nav */
+.sidebar__nav {
+  flex: 1;
+  padding: 14px 10px;
+  overflow-y: auto;
+}
+
+.sidebar__nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.855rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  transition: background 140ms ease, color 140ms ease;
+  position: relative;
+}
+
+.sidebar__link:hover {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.85);
+}
+
+.sidebar__link--active {
+  background: rgba(255,255,255,0.08);
+  color: #e8eaf0;
+  font-weight: 600;
+}
+
+.sidebar__link-icon {
+  font-size: 0.85rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar__link-badge {
+  margin-left: auto;
+  background: #8bc34a;
+  color: #0f1a0a;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  line-height: 1.6;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Footer – user profile */
+.sidebar__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.sidebar__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #2d4a6e;
+  color: #7aaddf;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.sidebar__user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e8eaf0;
+  line-height: 1.2;
+}
+
+.sidebar__user-role {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* ─── Main content area ───────────────────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Top header bar (matches screenshot) ─────────────────────────────────────── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.top-bar__date-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar__date-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.top-bar__date-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.top-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.top-bar__bell {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: background 140ms;
+}
+.top-bar__bell:hover { background: #f3f4f6; }
+
+.top-bar__bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8bc34a;
+  border: 1.5px solid #fff;
+}
+
+.top-bar__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar__user-info {
+  text-align: right;
+}
+
+.top-bar__user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.top-bar__user-role {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1;
+}
+
+.top-bar__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2d4a6e;
+  color: #7aaddf;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+/* ─── Page content wrapper ────────────────────────────────────────────────────── */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ─── Page header (inner, reusable for non-dashboard pages) ──────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 32px 22px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.page-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.page-header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.page-header__sub {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Page body ───────────────────────────────────────────────────────────────── */
+.page-body {
+  padding: 28px 32px;
+  max-width: 1100px;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .top-bar { padding: 0 16px; }
+  .page-body { padding: 16px; }
+}
